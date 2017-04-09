@@ -1,3 +1,5 @@
+#  SEQUENTIAL PROCESS
+
 buildseq : sequential/FDTD3D.c
 	cd sequential; gcc -o FDTD3D FDTD3D.c -lm -O3
 
@@ -6,6 +8,11 @@ runseq : buildseq
 
 batchseq : slsequential.slurm
 	sbatch slsequential.slurm
+
+editseq : sequential/FDTD3D.c
+	vim sequential/FDTD3D.c
+
+# REVERSED ITERATION
 
 buildrev : reverse/reviter.c
 	cd reverse; gcc -o reviter reviter.c -lm -O3
@@ -16,6 +23,11 @@ runrev : buildrev
 batchrev : slreverse.slurm
 	sbatch slreverse.slurm
 
+editrev : reverse/reviter.c
+	vim reverse/reviter.c
+
+# CUDA IMPROVEMENTS ONLY
+
 buildcuda : cuda/cudatiming.cu
 	cd cuda; nvcc -o cudatime cudatiming.cu
 
@@ -24,6 +36,11 @@ runcuda : buildcuda
 
 batchcuda : slcuda.slurm
 	sbatch slcuda.slurm
+
+editcuda : cuda/cudatiming.cu
+	vim cuda/cudatiming.cu
+
+# OTHER HELPERS
 
 batchall :
 	sbatch slsequential.slurm; sbatch slreverse.slurm; sbatch slcuda.slurm

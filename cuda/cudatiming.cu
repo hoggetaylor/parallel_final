@@ -5,7 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <sys/time.h>
-#include <cutil.h>
+#include <cuda_runtime.h>
 
 int main() {
     int imax = 100, jmax = 100, nmax = 1000, nhalf = 20, no = nhalf*3, kmax = 100;
@@ -75,8 +75,8 @@ int main() {
     //    printf("Error in gettimeofday()\n");
     //    exit(1);
     //}
-    CUDA_SAFE_CALL(cudaEventCreate(&start_event));
-    CUDA_SAFE_CALL(cudaEventCreate(&stop_event));
+    cudaEventCreate(&start_event);
+    cudaEventCreate(&stop_event);
     cudaEventRecord(start_event, 0);
 
     for (n = 0; n < nmax; n++) {
@@ -136,7 +136,7 @@ int main() {
     //}
     cudaEventRecord(stop_event, 0);
     cudaEventSynchronize(stop_event);
-    CUDA_SAFE_CALL(cudaEventElapsedTime(&elapsed_time, start_event, stop_event));
+    cudaEventElapsedTime(&elapsed_time, start_event, stop_event);
 
     fclose(fPointer);
 
