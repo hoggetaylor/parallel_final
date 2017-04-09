@@ -6,3 +6,9 @@ clean :
 
 run : FDTD3D
 	./FDTD3D
+
+buildrev : reviter.c
+	gcc -o reviter reviter.c -lm -03
+
+runrev : buildrev
+	./reviter
