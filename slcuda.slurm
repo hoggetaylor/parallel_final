@@ -5,10 +5,10 @@
 #SBATCH --time=8:00:00
 #SBATCH --nodes=1
 #SBATCH --export=ALL
-#SBATCH -o results.txt
-#SBATCH -e err.txt
+#SBATCH -o cuda/results.txt
+#SBATCH -e cuda/err.txt
 
 module load gcc
+module load cuda
 
-make || exit 1
-make run
+make runcuda

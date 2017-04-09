@@ -2,13 +2,12 @@
 
 #SBATCH --account=soc-kp
 #SBATCH --partition=soc-kp
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=taylor.hogge@utah.edu
 #SBATCH --time=8:00:00
 #SBATCH --nodes=1
-#SBATCH -o fdtd.out
+#SBATCH --export=ALL
+#SBATCH -o reverse/results.txt
+#SBATCH -e reverse/err.txt
 
 module load gcc
 
-make || exit 1
-make run
+make runrev

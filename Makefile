@@ -1,14 +1,20 @@
-FDTD3D : FDTD3D.c
-	gcc -o FDTD3D FDTD3D.c -lm -O3
+buildseq : sequential/FDTD3D.c
+	cd sequential; gcc -o FDTD3D FDTD3D.c -lm -O3
 
-clean :
-	rm -f FDTD3D
+runseq : buildseq 
+	./sequential/FDTD3D
 
-run : FDTD3D
-	./FDTD3D
-
-buildrev : reviter.c
-	gcc -o reviter reviter.c -lm -03
+buildrev : reverse/reviter.c
+	cd reverse; gcc -o reviter reviter.c -lm -O3
 
 runrev : buildrev
-	./reviter
+	./reverse/reviter
+
+buildcuda : cuda/cudatiming.cu
+	cd cuda; nvcc -o cudatime cudatiming.cu
+
+runcuda : buildcuda
+	./cuda/cudatime
+
+clean :
+	rm -f sequential/FDTD3D; rm -f reverse/reviter; rm -f cuda/cudatime
