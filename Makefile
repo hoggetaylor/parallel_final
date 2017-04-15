@@ -27,9 +27,10 @@ editrev : reverse/reviter.c
 	vim reverse/reviter.c
 
 # CUDA IMPROVEMENTS ONLY
+INCLUDE=-I/usr/local/cuda/8.0/cuda/include
 
 buildcuda : cuda/cudatiming.cu
-	cd cuda; nvcc -o cudatime cudatiming.cu
+	cd cuda; nvcc $(INCLUDE) -o cudatime cudatiming.cu
 
 runcuda : buildcuda
 	./cuda/cudatime
