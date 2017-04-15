@@ -1,3 +1,6 @@
+
+INCLUDE=-I/usr/local/cuda/8.0/cuda/include
+
 #  SEQUENTIAL PROCESS
 
 buildseq : sequential/FDTD3D.c
@@ -14,8 +17,8 @@ editseq : sequential/FDTD3D.c
 
 # REVERSED ITERATION
 
-buildrev : reverse/reviter.c
-	cd reverse; gcc -o reviter reviter.c -lm -O3
+buildrev : reverse/reviter.cu
+	cd reverse; nvcc $(INCLUDE) -o reviter reviter.cu
 
 runrev : buildrev
 	./reverse/reviter
@@ -23,11 +26,10 @@ runrev : buildrev
 batchrev : slreverse.slurm
 	sbatch slreverse.slurm
 
-editrev : reverse/reviter.c
-	vim reverse/reviter.c
+editrev : reverse/reviter.cu
+	vim reverse/reviter.cu
 
 # CUDA IMPROVEMENTS ONLY
-INCLUDE=-I/usr/local/cuda/8.0/cuda/include
 
 buildcuda : cuda/cudatiming.cu
 	cd cuda; nvcc $(INCLUDE) -o cudatime cudatiming.cu
