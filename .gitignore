@@ -2,3 +2,6 @@
 *.sh
 **/*.txt
 **/*.dat
+cuda/cudatime
+reverse/reviter
+sequential/FDTD3D
