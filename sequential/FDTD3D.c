@@ -65,8 +65,6 @@ int main() {
     Da = (1-((sigma*dt)/(2*mu)))/(1+((sigma*dt)/(2*mu)));
     Db = (dt/(mu*delta))/(1+((sigma*dt)/(2*mu)));
 
-    FILE * fPointer;
-    fPointer = fopen("myoutput3d.dat","w");
 
     if(gettimeofday(&tstart, NULL) != 0){
         printf("Error in gettimeofday()\n");
@@ -92,11 +90,6 @@ int main() {
             for (j = 1; j < jmax; j++) {
                 for (i = 1; i < imax; i++) {
                     Ez[i][j][k] = Ca*Ez[i][j][k] + Cb*((Hz[i][j][k] - Hy[i-1][j][k]) + (Hy[i][j-1][k] - Hy[i][j][k]));
-                    if(n==200) {
-                        memset(buf, 0, 18);
-                        sprintf(buf, "%e\n", Ez[i][j][k]);
-                        fputs(buf, fPointer);
-                    }
                 }
             }
         }
@@ -127,6 +120,29 @@ int main() {
     if(gettimeofday(&tend, NULL) != 0){
         printf("Error in gettimeofday()\n");
         exit(1);
+    }
+
+    FILE * fPointer;
+    fPointer = fopen("outseq.dat","w");
+
+    for (k=0; k<kmax; k++) {
+      for (j=0; j<jmax-1; j++) {
+	for (i=0; i<imax-1; i++) {
+
+          memset(buf, 0, 18);
+          sprintf(buf, "%e\n", Hx[i][j][k]);
+          fputs(buf, fPointer);
+
+          memset(buf, 0, 18);
+          sprintf(buf, "%e\n", Hy[i][j][k]);
+          fputs(buf, fPointer);
+
+          memset(buf, 0, 18);
+          sprintf(buf, "%e\n", Hz[i][j][k]);
+          fputs(buf, fPointer);
+    
+	}
+      }
     }
 
     fclose(fPointer);
