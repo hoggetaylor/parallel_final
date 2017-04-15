@@ -7,6 +7,48 @@
 #include <sys/time.h>
 #include <cuda_runtime.h>
 
+// This was taken from stackoverflow.com/questions/14038589/what-is-the-canonical-way-to-check-for-errors-using-the-cuda-runtime-api
+#define CHECK_ERROR(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line) {
+    if (code != cudaSuccess) {
+        printf("GPU error: %s %s %d\n", cudaGetErrorString(code), file, line);
+        exit(code);
+    }
+}
+
+extern __global__ void loop4_GPU(double*** Hx, double*** Ez, int kmax, int jmax, int imax) {
+    int k = blockIdx.x * 32 + threadIdx.x;
+    if (k < kmax) {
+        for (j = 0; j < jmax-1; j++) {
+            for (i = 1; i < imax-1; i++) {
+                Hx[i][j][k] = Da*Hx[i][j][k] + Db*((Ez[i][j][k] - Ez[i][j+1][k]) + (Ez[i][j][k+1]-Ez[i][j][k]));
+            }
+        }
+    }
+}
+
+extern __global__ void loop5_GPU(double*** Hy, double*** Ez, int kmax, int jmax, int imax) {
+    int k = blockIdx.x * 32 + threadIdx.x;
+    if (k < kmax) {
+       for (j = 1; j < jmax-1; j++) {
+           for (i = 0; i < imax-1; i++) {
+               Hy[i][j][k] = Da*Hy[i][j][k] + Db*((Ez[i+1][j][k] - Ez[i][j][k]) + (Ez[i][j][k]-Ez[i][j][k+1]));
+           }
+       }
+    }
+}
+
+extern __global__ void loop6_GPU(double*** Hz, double*** Ez, int kmax, int jmax, int imax) {
+    int k = (blockIdx.x * 32 + threadIdx.x) + 1; // this loop starts at k=1 so we add 1
+    if (k < kmax) {
+       for (j = 0; j < jmax-1; j++) {
+           for (i = 0; i < imax-1; i++) {
+               Hz[i][j][k] = Da*Hz[i][j][k] + Db*((Ez[i][j][k] - Ez[i+1][j][k]) + (Ez[i][j+1][k]-Ez[i][j][k]));
+           }
+       }
+    }
+}
+
 int main() {
     int imax = 100, jmax = 100, nmax = 1000, nhalf = 20, no = nhalf*3, kmax = 100;
     int i, j, n,k;
@@ -47,16 +89,16 @@ int main() {
     }	
 
     for(k=0;k<(kmax+1);k++){
-	for(j=0;j<(jmax+1);j++){
-	    for(i=0;i<(imax+1);i++){
+        for(j=0;j<(jmax+1);j++){
+            for(i=0;i<(imax+1);i++){
                 Ex[i][j][k] = 0.0;
                 Ey[i][j][k] = 0.0;
                 Ez[i][j][k] = 0.0;
                 Hx[i][j][k] = 0.0;
                 Hy[i][j][k] = 0.0;
                 Hz[i][j][k] = 0.0;
-	    }
-	}
+            }
+        }
     }	
 
     double Ca,Cb,Da,Db;
@@ -71,10 +113,6 @@ int main() {
     FILE * fPointer;
     fPointer = fopen("myoutput3d.dat","w");
 
-    //if(gettimeofday(&tstart, NULL) != 0){
-    //    printf("Error in gettimeofday()\n");
-    //    exit(1);
-    //}
     cudaEventCreate(&start_event);
     cudaEventCreate(&stop_event);
     cudaEventRecord(start_event, 0);
@@ -107,48 +145,75 @@ int main() {
             }
         }
         Ez[imax/2][jmax/2][kmax/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
-        for (k = 0; k < kmax; k++) {
-           for (j = 0; j < jmax-1; j++) {
-               for (i = 1; i < imax-1; i++) {
-                   Hx[i][j][k] = Da*Hx[i][j][k] + Db*((Ez[i][j][k] - Ez[i][j+1][k]) + (Ez[i][j][k+1]-Ez[i][j][k]));
-               }
-           }
+
+        double*** g_Hx;
+        double*** g_Hy;
+        double*** g_Hz;
+        double*** g_Ez;
+
+        CHECK_ERROR(cudaMalloc((void**)&g_Hx, (imax+1)*sizeof(double**)));
+        CHECK_ERROR(cudaMalloc((void**)&g_Hy, (imax+1)*sizeof(double**)));
+        CHECK_ERROR(cudaMalloc((void**)&g_Hz, (imax+1)*sizeof(double**)));
+        CHECK_ERROR(cudaMalloc((void**)&g_Ez, (imax+1)*sizeof(double**)));
+        for(i=0;i<(imax+1);i++) {
+            CHECK_ERROR(cudaMalloc((void**)&g_Hx[i], (jmax+1)*sizeof(double*)));
+            CHECK_ERROR(cudaMalloc((void**)&g_Hy[i], (jmax+1)*sizeof(double*)));
+            CHECK_ERROR(cudaMalloc((void**)&g_Hz[i], (jmax+1)*sizeof(double*)));
+            CHECK_ERROR(cudaMalloc((void**)&g_Ez[i], (jmax+1)*sizeof(double*)));
+            for(j=0;j<(jmax+1);j++) {
+                CHECK_ERROR(cudaMalloc((void**)&g_Hx[i][j], (kmax+1)*sizeof(double)));
+                CHECK_ERROR(cudaMalloc((void**)&g_Hy[i][j], (kmax+1)*sizeof(double)));
+                CHECK_ERROR(cudaMalloc((void**)&g_Hz[i][j], (kmax+1)*sizeof(double)));
+                CHECK_ERROR(cudaMalloc((void**)&g_Ez[i][j], (kmax+1)*sizeof(double)));
+            }
+        } 
+        for(i=0;i<(imax+1);i++) {
+            for(j=0;j<(jmax+1);j++) {
+                CHECK_ERROR(cudaMemcpy(g_Hx[i][j], Hx[i][j], (kmax+1)*sizeof(double), cudaMemcpyHostToDevice));
+                CHECK_ERROR(cudaMemcpy(g_Hy[i][j], Hy[i][j], (kmax+1)*sizeof(double), cudaMemcpyHostToDevice));
+                CHECK_ERROR(cudaMemcpy(g_Hz[i][j], Hz[i][j], (kmax+1)*sizeof(double), cudaMemcpyHostToDevice));
+                CHECK_ERROR(cudaMemcpy(g_Ez[i][j], Ez[i][j], (kmax+1)*sizeof(double), cudaMemcpyHostToDevice));
+            }
         }
-        for (k = 0; k < kmax; k++) {
-           for (j = 1; j < jmax-1; j++) {
-               for (i = 0; i < imax-1; i++) {
-                   Hy[i][j][k] = Da*Hy[i][j][k] + Db*((Ez[i+1][j][k] - Ez[i][j][k]) + (Ez[i][j][k]-Ez[i][j][k+1]));
-               }
-           }
+
+        dim3 threadsPerBlock(32);
+        dim3 numBlocks((kmax + threadsPerBlock.x-1) / threadsPerBlock.x);
+        loop4_GPU<<<numBlocks, threadsPerBlock>>>(g_Hx, g_Ez, kmax, jmax, imax);
+        loop5_GPU<<<numBlocks, threadsPerBlock>>>(g_Hy, g_Ez, kmax, jmax, imax);
+        loop6_GPU<<<numBlocks, threadsPerBlock>>>(g_Hz, g_Ez, kmax, jmax, imax);
+
+        for(i=0;i<(imax+1);i++) {
+            for(j=0;j<(jmax+1);j++) {
+                CHECK_ERROR(cudaMemcpy(Hx[i][j], g_Hx[i][j], (kmax+1)*sizeof(double), cudaMemcpyDeviceToHost));
+                CHECK_ERROR(cudaMemcpy(Hy[i][j], g_Hy[i][j], (kmax+1)*sizeof(double), cudaMemcpyDeviceToHost));
+                CHECK_ERROR(cudaMemcpy(Hz[i][j], g_Hz[i][j], (kmax+1)*sizeof(double), cudaMemcpyDeviceToHost));
+                CHECK_ERROR(cudaMemcpy(Ez[i][j], g_Ez[i][j], (kmax+1)*sizeof(double), cudaMemcpyDeviceToHost));
+            }
         }
-        for (k = 1; k < kmax; k++) {
-           for (j = 0; j < jmax-1; j++) {
-               for (i = 0; i < imax-1; i++) {
-                   Hz[i][j][k] = Da*Hz[i][j][k] + Db*((Ez[i][j][k] - Ez[i+1][j][k]) + (Ez[i][j+1][k]-Ez[i][j][k]));
-               }
-           }
+
+        for(i=0;i<(imax+1);i++) {
+            for(j=0;j<(jmax+1);j++) {
+                CHECK_ERROR(cudaFree(g_Hx[i][j]));
+                CHECK_ERROR(cudaFree(g_Hy[i][j]));
+                CHECK_ERROR(cudaFree(g_Hz[i][j]));
+                CHECK_ERROR(cudaFree(g_Ez[i][j]));
+            }
+            CHECK_ERROR(cudaFree(g_Hx[i]));
+            CHECK_ERROR(cudaFree(g_Hy[i]));
+            CHECK_ERROR(cudaFree(g_Hz[i]));
+            CHECK_ERROR(cudaFree(g_Ez[i]));
         }
+        CHECK_ERROR(cudaFree(g_Hx));
+        CHECK_ERROR(cudaFree(g_Hy));
+        CHECK_ERROR(cudaFree(g_Hz));
+        CHECK_ERROR(cudaFree(g_Ez));
     }
 
-    //if(gettimeofday(&tend, NULL) != 0){
-    //    printf("Error in gettimeofday()\n");
-    //    exit(1);
-    //}
     cudaEventRecord(stop_event, 0);
     cudaEventSynchronize(stop_event);
     cudaEventElapsedTime(&elapsed_time, start_event, stop_event);
 
     fclose(fPointer);
-
-    // calculate run time
-    //if(tstart.tv_usec > tend.tv_usec){
-    //    tend.tv_usec += 1000000;
-    //    tend.tv_sec--;
-    //}
-    //usec = tend.tv_usec - tstart.tv_usec;
-    //sec = tend.tv_sec - tstart.tv_sec;
-
-    //printf("Run Time for run = %d sec and %d usec\n",sec,usec);
 
     printf("GPU Time: %.2f\n", elapsed_time);
 
