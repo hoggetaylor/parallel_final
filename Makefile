@@ -32,7 +32,7 @@ editrev : reverse/reviter.cu
 # CUDA IMPROVEMENTS ONLY
 
 buildcuda : cuda/cudatiming.cu
-	cd cuda; nvcc $(INCLUDE) -o cudatime cudatiming.cu
+	cd cuda; nvcc $(INCLUDE) -o cudatime cudatiming.cu -g
 
 runcuda : buildcuda
 	./cuda/cudatime

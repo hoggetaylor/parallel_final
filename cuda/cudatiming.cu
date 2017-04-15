@@ -53,6 +53,7 @@ extern __global__ void loop6_GPU(double*** Hz, double*** Ez, double Da, double D
 }
 
 int main() {
+    printf("Running main\n");
     int imax = 100, jmax = 100, nmax = 1000, nhalf = 20, no = nhalf*3, kmax = 100;
     int i, j, n,k;
     double c = 2.99792458e8, pi = 3.141592654, sigma = 0, mu = 4.0 * pi * 1.0e-7, eps = 8.85418782e-12;
@@ -103,6 +104,27 @@ int main() {
             }
         }
     }	
+	double*** g_Hx;
+        double*** g_Hy;
+        double*** g_Hz;
+        double*** g_Ez;
+	//fprintf(fPointer, "allocating memory on GPU\n");
+        CHECK_ERROR(cudaMalloc((void**)&g_Hx, (imax+1)*sizeof(double**)));
+        CHECK_ERROR(cudaMalloc((void**)&g_Hy, (imax+1)*sizeof(double**)));
+        CHECK_ERROR(cudaMalloc((void**)&g_Hz, (imax+1)*sizeof(double**)));
+        CHECK_ERROR(cudaMalloc((void**)&g_Ez, (imax+1)*sizeof(double**)));
+        for(i=0;i<(imax+1);i++) {
+            CHECK_ERROR(cudaMalloc((void**)&g_Hx[i], (jmax+1)*sizeof(double*)));
+            CHECK_ERROR(cudaMalloc((void**)&g_Hy[i], (jmax+1)*sizeof(double*)));
+            CHECK_ERROR(cudaMalloc((void**)&g_Hz[i], (jmax+1)*sizeof(double*)));
+            CHECK_ERROR(cudaMalloc((void**)&g_Ez[i], (jmax+1)*sizeof(double*)));
+            for(j=0;j<(jmax+1);j++) {
+                CHECK_ERROR(cudaMalloc((void**)&g_Hx[i][j], (kmax+1)*sizeof(double)));
+                CHECK_ERROR(cudaMalloc((void**)&g_Hy[i][j], (kmax+1)*sizeof(double)));
+                CHECK_ERROR(cudaMalloc((void**)&g_Hz[i][j], (kmax+1)*sizeof(double)));
+                CHECK_ERROR(cudaMalloc((void**)&g_Ez[i][j], (kmax+1)*sizeof(double)));
+            }
+        }
 
     double Ca,Cb,Da,Db;
 
@@ -145,29 +167,7 @@ int main() {
             }
         }
         Ez[imax/2][jmax/2][kmax/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
-
-        double*** g_Hx;
-        double*** g_Hy;
-        double*** g_Hz;
-        double*** g_Ez;
-
-	fprintf(fPointer, "allocating memory on GPU\n");
-        CHECK_ERROR(cudaMalloc((void**)&g_Hx, (imax+1)*sizeof(double**)));
-        CHECK_ERROR(cudaMalloc((void**)&g_Hy, (imax+1)*sizeof(double**)));
-        CHECK_ERROR(cudaMalloc((void**)&g_Hz, (imax+1)*sizeof(double**)));
-        CHECK_ERROR(cudaMalloc((void**)&g_Ez, (imax+1)*sizeof(double**)));
-        for(i=0;i<(imax+1);i++) {
-            CHECK_ERROR(cudaMalloc((void**)&g_Hx[i], (jmax+1)*sizeof(double*)));
-            CHECK_ERROR(cudaMalloc((void**)&g_Hy[i], (jmax+1)*sizeof(double*)));
-            CHECK_ERROR(cudaMalloc((void**)&g_Hz[i], (jmax+1)*sizeof(double*)));
-            CHECK_ERROR(cudaMalloc((void**)&g_Ez[i], (jmax+1)*sizeof(double*)));
-            for(j=0;j<(jmax+1);j++) {
-                CHECK_ERROR(cudaMalloc((void**)&g_Hx[i][j], (kmax+1)*sizeof(double)));
-                CHECK_ERROR(cudaMalloc((void**)&g_Hy[i][j], (kmax+1)*sizeof(double)));
-                CHECK_ERROR(cudaMalloc((void**)&g_Hz[i][j], (kmax+1)*sizeof(double)));
-                CHECK_ERROR(cudaMalloc((void**)&g_Ez[i][j], (kmax+1)*sizeof(double)));
-            }
-        } 
+	 
 	fprintf(fPointer, "Copying memory to GPU\n");
         for(i=0;i<(imax+1);i++) {
             for(j=0;j<(jmax+1);j++) {
@@ -195,6 +195,8 @@ int main() {
             }
         }
 
+	}
+
 	fprintf(fPointer, "Freeing memory on GPU\n");
         for(i=0;i<(imax+1);i++) {
             for(j=0;j<(jmax+1);j++) {
@@ -212,7 +214,6 @@ int main() {
         CHECK_ERROR(cudaFree(g_Hy));
         CHECK_ERROR(cudaFree(g_Hz));
         CHECK_ERROR(cudaFree(g_Ez));
-    }
 
     cudaEventRecord(stop_event, 0);
     cudaEventSynchronize(stop_event);
