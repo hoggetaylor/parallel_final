@@ -15,3 +15,4 @@ module load gcc
 module load cuda
 
 make runcuda
+echo $?

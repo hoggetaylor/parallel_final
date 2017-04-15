@@ -106,8 +106,6 @@ int main() {
 
     double Ca,Cb,Da,Db;
 
-    char buf[18];
-
     Ca = (1-((sigma*dt)/(2*eps)))/(1+((sigma*dt)/(2*eps)));
     Cb = (dt/(eps*delta))/(1+((sigma*dt)/(2*eps)));
     Da = (1-((sigma*dt)/(2*mu)))/(1+((sigma*dt)/(2*mu)));
@@ -116,11 +114,15 @@ int main() {
     FILE * fPointer;
     fPointer = fopen("myoutput3d.dat","w");
 
-    cudaEventCreate(&start_event);
-    cudaEventCreate(&stop_event);
-    cudaEventRecord(start_event, 0);
+    CHECK_ERROR(cudaEventCreate(&start_event));
+    CHECK_ERROR(cudaEventCreate(&stop_event));
+    CHECK_ERROR(cudaEventRecord(start_event, 0));
 
     for (n = 0; n < nmax; n++) {
+	char buf[18];
+	memset(buf, 0, 18);
+	sprintf(buf, "inside n loop\n");
+	fputs(buf, fPointer);
         for (k = 1; k < kmax; k++) {
             for (j = 1; j < jmax; j++) {
                 for (i = 0; i < imax; i++) {
@@ -139,11 +141,6 @@ int main() {
             for (j = 1; j < jmax; j++) {
                 for (i = 1; i < imax; i++) {
                     Ez[i][j][k] = Ca*Ez[i][j][k] + Cb*((Hz[i][j][k] - Hy[i-1][j][k]) + (Hy[i][j-1][k] - Hy[i][j][k]));
-                    if(n==200) {
-                        memset(buf, 0, 18);
-                        sprintf(buf, "%e\n", Ez[i][j][k]);
-                        fputs(buf, fPointer);
-                    }
                 }
             }
         }
@@ -154,6 +151,7 @@ int main() {
         double*** g_Hz;
         double*** g_Ez;
 
+	fprintf(fPointer, "allocating memory on GPU\n");
         CHECK_ERROR(cudaMalloc((void**)&g_Hx, (imax+1)*sizeof(double**)));
         CHECK_ERROR(cudaMalloc((void**)&g_Hy, (imax+1)*sizeof(double**)));
         CHECK_ERROR(cudaMalloc((void**)&g_Hz, (imax+1)*sizeof(double**)));
@@ -170,6 +168,7 @@ int main() {
                 CHECK_ERROR(cudaMalloc((void**)&g_Ez[i][j], (kmax+1)*sizeof(double)));
             }
         } 
+	fprintf(fPointer, "Copying memory to GPU\n");
         for(i=0;i<(imax+1);i++) {
             for(j=0;j<(jmax+1);j++) {
                 CHECK_ERROR(cudaMemcpy(g_Hx[i][j], Hx[i][j], (kmax+1)*sizeof(double), cudaMemcpyHostToDevice));
@@ -179,12 +178,14 @@ int main() {
             }
         }
 
+	fprintf(fPointer, "Running loops on GPU\n");
         dim3 threadsPerBlock(32);
         dim3 numBlocks((kmax + threadsPerBlock.x-1) / threadsPerBlock.x);
         loop4_GPU<<<numBlocks, threadsPerBlock>>>(g_Hx, g_Ez, Da, Db, kmax, jmax, imax);
         loop5_GPU<<<numBlocks, threadsPerBlock>>>(g_Hy, g_Ez, Da, Db, kmax, jmax, imax);
         loop6_GPU<<<numBlocks, threadsPerBlock>>>(g_Hz, g_Ez, Da, Db, kmax, jmax, imax);
 
+	fprintf(fPointer, "Copying results back to host\n");
         for(i=0;i<(imax+1);i++) {
             for(j=0;j<(jmax+1);j++) {
                 CHECK_ERROR(cudaMemcpy(Hx[i][j], g_Hx[i][j], (kmax+1)*sizeof(double), cudaMemcpyDeviceToHost));
@@ -194,6 +195,7 @@ int main() {
             }
         }
 
+	fprintf(fPointer, "Freeing memory on GPU\n");
         for(i=0;i<(imax+1);i++) {
             for(j=0;j<(jmax+1);j++) {
                 CHECK_ERROR(cudaFree(g_Hx[i][j]));
