@@ -16,7 +16,10 @@ inline void gpuAssert(cudaError_t code, const char *file, int line) {
     }
 }
 
-extern __global__ void loop4_GPU(double* Hx, double* Ez, double Da, double Db, int kmax, int jmax, int imax) {
+/**
+ *  Second half of the total loop circuit.
+ */
+extern __global__ void loop2_GPU(double* Hx, double* Ez, double Da, double Db, int kmax, int jmax, int imax) {
     int i, j;
     int k = blockIdx.x * 32 + threadIdx.x;
     if (k < kmax) {
@@ -26,11 +29,6 @@ extern __global__ void loop4_GPU(double* Hx, double* Ez, double Da, double Db, i
             }
         }
     }
-}
-
-extern __global__ void loop5_GPU(double* Hy, double* Ez, double Da, double Db, int kmax, int jmax, int imax) {
-    int i, j;
-    int k = blockIdx.x * 32 + threadIdx.x;
     if (k < kmax) {
        for (j = 1; j < jmax-1; j++) {
            for (i = 0; i < imax-1; i++) {
@@ -38,11 +36,6 @@ extern __global__ void loop5_GPU(double* Hy, double* Ez, double Da, double Db, i
            }
        }
     }
-}
-
-extern __global__ void loop6_GPU(double* Hz, double* Ez, double Da, double Db, int kmax, int jmax, int imax) {
-    int i, j;
-    int k = (blockIdx.x * 32 + threadIdx.x) + 1; // this loop starts at k=1 so we add 1
     if (k < kmax) {
        for (j = 0; j < jmax-1; j++) {
            for (i = 0; i < imax-1; i++) {
@@ -128,9 +121,7 @@ int main() {
 
         dim3 threadsPerBlock(32);
         dim3 numBlocks((kmax + threadsPerBlock.x-1) / threadsPerBlock.x);
-        loop4_GPU<<<numBlocks, threadsPerBlock>>>(g_Hx, g_Ez, Da, Db, kmax, jmax, imax);
-        loop5_GPU<<<numBlocks, threadsPerBlock>>>(g_Hy, g_Ez, Da, Db, kmax, jmax, imax);
-        loop6_GPU<<<numBlocks, threadsPerBlock>>>(g_Hz, g_Ez, Da, Db, kmax, jmax, imax);
+        loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Hx, g_Ez, Da, Db, kmax, jmax, imax);
     }
 
     CHECK_ERROR(cudaMemcpy(Ex, g_Ex, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
