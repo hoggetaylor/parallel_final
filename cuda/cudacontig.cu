@@ -64,21 +64,25 @@ int main() {
     cudaEvent_t start_event, stop_event;
     float elapsed_time;
 
-    Ex = (double ***)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Ey = (double ***)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Ez = (double ***)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Hx = (double ***)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Hy = (double ***)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Hz = (double ***)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
+    Ex = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
+    Ey = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
+    Ez = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
+    Hx = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
+    Hy = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
+    Hz = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
 
+    double* g_Ex;
+    double* g_Ey;
+    double* g_Ez;
     double* g_Hx;
     double* g_Hy;
     double* g_Hz;
-    double* g_Ez;
+    CHECK_ERROR(cudaMalloc((void**)&g_Ex, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
+    CHECK_ERROR(cudaMalloc((void**)&g_Ey, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
+    CHECK_ERROR(cudaMalloc((void**)&g_Ez, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
     CHECK_ERROR(cudaMalloc((void**)&g_Hx, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
     CHECK_ERROR(cudaMalloc((void**)&g_Hy, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
     CHECK_ERROR(cudaMalloc((void**)&g_Hz, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
-    CHECK_ERROR(cudaMalloc((void**)&g_Ez, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
 
     double Ca,Cb,Da,Db;
 
@@ -87,12 +91,16 @@ int main() {
     Da = (1-((sigma*dt)/(2*mu)))/(1+((sigma*dt)/(2*mu)));
     Db = (dt/(mu*delta))/(1+((sigma*dt)/(2*mu)));
 
-    FILE * fPointer;
-    fPointer = fopen("myoutput3d.dat","w");
-
     CHECK_ERROR(cudaEventCreate(&start_event));
     CHECK_ERROR(cudaEventCreate(&stop_event));
     CHECK_ERROR(cudaEventRecord(start_event, 0));
+
+    CHECK_ERROR(cudaMemcpy(g_Ex, Ex, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Ey, Ey, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Ez, Ez, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Hx, Hx, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Hy, Hy, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Hz, Hz, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
 
     for (n = 0; n < nmax; n++) {
         for (k = 1; k < kmax; k++) {
@@ -117,23 +125,20 @@ int main() {
             }
         }
         Ez[imax/2][jmax/2][kmax/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
-	 
-        CHECK_ERROR(cudaMemcpy(g_Hx, Hx, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
-        CHECK_ERROR(cudaMemcpy(g_Hy, Hy, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
-        CHECK_ERROR(cudaMemcpy(g_Hz, Hz, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
-        CHECK_ERROR(cudaMemcpy(g_Ez, Ez, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
 
         dim3 threadsPerBlock(32);
         dim3 numBlocks((kmax + threadsPerBlock.x-1) / threadsPerBlock.x);
         loop4_GPU<<<numBlocks, threadsPerBlock>>>(g_Hx, g_Ez, Da, Db, kmax, jmax, imax);
         loop5_GPU<<<numBlocks, threadsPerBlock>>>(g_Hy, g_Ez, Da, Db, kmax, jmax, imax);
         loop6_GPU<<<numBlocks, threadsPerBlock>>>(g_Hz, g_Ez, Da, Db, kmax, jmax, imax);
-
-        CHECK_ERROR(cudaMemcpy(Hx, g_Hx, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
-        CHECK_ERROR(cudaMemcpy(Hy, g_Hy, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
-        CHECK_ERROR(cudaMemcpy(Hz, g_Hz, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
-        CHECK_ERROR(cudaMemcpy(Ez, g_Ez, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
     }
+
+    CHECK_ERROR(cudaMemcpy(Ex, g_Ex, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Ey, g_Ey, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Ez, g_Ez, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Hx, g_Hx, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Hy, g_Hy, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Hz, g_Hz, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
 
     CHECK_ERROR(cudaFree(g_Hx));
     CHECK_ERROR(cudaFree(g_Hy));
@@ -144,7 +149,6 @@ int main() {
     cudaEventSynchronize(stop_event);
     cudaEventElapsedTime(&elapsed_time, start_event, stop_event);
 
-    fclose(fPointer);
     printf("GPU Time: %.2f\n", elapsed_time);
 
     return 0;
