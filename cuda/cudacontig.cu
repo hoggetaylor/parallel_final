@@ -11,7 +11,6 @@
 #define JMAX 100;
 #define KMAX 100;
 
-
 // This was taken from stackoverflow.com/questions/14038589/what-is-the-canonical-way-to-check-for-errors-using-the-cuda-runtime-api
 #define CHECK_ERROR(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line) {
@@ -24,12 +23,11 @@ inline void gpuAssert(cudaError_t code, const char *file, int line) {
 /**
  *  Second half of the total loop circuit.
  */
-extern __global__ void loop2_GPU(
-        double (*Ez)[IMAX][JMAX], 
-        double (*Hx)[IMAX][JMAX], 
-        double (*Hy)[IMAX][JMAX], 
-        double (*Hz)[IMAX][JMAX],
-        double Da, double Db) {
+extern __global__ void loop2_GPU(double (*Ez)[IMAX][JMAX], 
+                                double (*Hx)[IMAX][JMAX], 
+                                double (*Hy)[IMAX][JMAX], 
+                                double (*Hz)[IMAX][JMAX],
+                                double Da, double Db) {
     int i, j;
     int k = blockIdx.x * 32 + threadIdx.x;
 
