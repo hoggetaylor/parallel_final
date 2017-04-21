@@ -49,7 +49,8 @@ extern __global__ void loop1_GPU(double (*Ex)[IMAX][JMAX], double (*Ey)[IMAX][JM
 }
 
 extern __global__ void mid_GPU(double (*Ez)[IMAX][JMAX], double n, double no, double nhalf) {
-    Ez[IMAX/2][JMAX/2][KMAX/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
+    if ((blockIdx.x+threadIdx.x) == 0)
+      Ez[IMAX/2][JMAX/2][KMAX/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
 }
 
 /**
@@ -137,11 +138,11 @@ int main() {
     dim3 singleBlock(1);
 
     for (n = 0; n < nmax; n++) {
-      loop1_GPU<<<threadsPerBlock, numBlocks>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca);
+      loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca);
       CHECK_ERROR(cudaPeekAtLastError());
-      mid_GPU<<<singleBlock, singleThread>>>(g_Ez, n, no, nhalf);
+      mid_GPU<<<singleThread, singleBlock>>>(g_Ez, n, no, nhalf);
       CHECK_ERROR(cudaPeekAtLastError());
-      loop2_GPU<<<threadsPerBlock, numBlocks>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
+      loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
       CHECK_ERROR(cudaPeekAtLastError());
     }
 
