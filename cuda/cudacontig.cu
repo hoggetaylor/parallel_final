@@ -138,8 +138,11 @@ int main() {
 
     for (n = 0; n < nmax; n++) {
       loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca);
+      CHECK_ERROR(cudaPeekAtLastError());
       mid_GPU<<<singleBlock, singleThread>>>(g_Ez, n, no, nhalf);
+      CHECK_ERROR(cudaPeekAtLastError());
       loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
+      CHECK_ERROR(cudaPeekAtLastError());
     }
 
     CHECK_ERROR(cudaMemcpy(Ex, g_Ex, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
