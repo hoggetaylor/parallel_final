@@ -7,9 +7,9 @@
 #include <sys/time.h>
 #include <cuda_runtime.h>
 
-#define IMAX 100;
-#define JMAX 100;
-#define KMAX 100;
+#define IMAX 100
+#define JMAX 100
+#define KMAX 100
 
 // This was taken from stackoverflow.com/questions/14038589/what-is-the-canonical-way-to-check-for-errors-using-the-cuda-runtime-api
 #define CHECK_ERROR(ans) { gpuAssert((ans), __FILE__, __LINE__); }
@@ -23,11 +23,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line) {
 /**
  *  Second half of the total loop circuit.
  */
-extern __global__ void loop2_GPU(double (*Ez)[IMAX][JMAX], 
-                                double (*Hx)[IMAX][JMAX], 
-                                double (*Hy)[IMAX][JMAX], 
-                                double (*Hz)[IMAX][JMAX],
-                                double Da, double Db) {
+extern __global__ void loop2_GPU(double *Ez, double *Hx, double *Hy, double *Hz, double Da, double Db) {
     int i, j;
     int k = blockIdx.x * 32 + threadIdx.x;
 
@@ -54,7 +50,7 @@ extern __global__ void loop2_GPU(double (*Ez)[IMAX][JMAX],
 
 int main() {
     int nmax = 1000, nhalf = 20, no = nhalf*3;
-    int i, j, n,k;
+    int n;
     double c = 2.99792458e8, pi = 3.141592654, sigma = 0, mu = 4.0 * pi * 1.0e-7, eps = 8.85418782e-12;
     double delta = 1e-3;
     double dt = delta/(c*1.41421356237);
@@ -64,12 +60,12 @@ int main() {
     cudaEvent_t start_event, stop_event;
     float elapsed_time;
 
-    Ex = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Ey = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Ez = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Hx = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Hy = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
-    Hz = (double *)calloc((imax+1) * (jmax+1) * (kmax+1), sizeof(double));
+    Ex = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Ey = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Ez = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Hx = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Hy = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Hz = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
 
     double* g_Ex;
     double* g_Ey;
