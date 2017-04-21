@@ -23,7 +23,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line) {
 /**
  *  First half of the total loop circuit
  */
-extern __global__ void loop1_GPU(double (*Ex)[IMAX][JMAX], double *Ey, double *Ez, double *Hy, double *Hz, double Cb, double Ca, int n, int no) {
+extern __global__ void loop1_GPU(double *Ex, double *Ey, double *Ez, double *Hy, double *Hz, double Cb, double Ca, int n, int no, int nhalf) {
   int i, j;
   int k = blockIdx.x * 32 + threadIdx.x;
   
@@ -47,10 +47,10 @@ extern __global__ void loop1_GPU(double (*Ex)[IMAX][JMAX], double *Ey, double *E
     }
   }
 
-  __syncThreads();
+  __syncthreads();
 
   if (k==0)
-    Ez[imax/2][jmax/2][kmax/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
+    Ez[IMAX/2][JMAX/2][KMAX/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
 }
 
 /**
@@ -132,10 +132,10 @@ int main() {
     CHECK_ERROR(cudaMemcpy(g_Hz, Hz, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
 
     dim3 threadsPerBlock(32);
-    dim3 numBlocks((kmax + threadsPerBlock.x-1) / threadsPerBlock.x);
+    dim3 numBlocks((KMAX + threadsPerBlock.x-1) / threadsPerBlock.x);
 
     for (n = 0; n < nmax; n++) {
-      loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca, n, no);
+      loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca, n, no, nhalf);
       loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
     }
 
