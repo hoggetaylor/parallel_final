@@ -21,6 +21,39 @@ inline void gpuAssert(cudaError_t code, const char *file, int line) {
 }
 
 /**
+ *  First half of the total loop circuit
+ */
+extern __global__ void loop1_GPU(double *Ex, double *Ey, double *Ez, double *Hy, double *Hz, double Cb, double Ca, int n, int no) {
+  int i, j;
+  int k = blockIdx.x * 32 + threadIdx.x;
+  
+  if (k < KMAX && k > 0) {
+    for (j=1; j<JMAX; j++) {
+      for (i=0; i<IMAX; i++) {
+	Ex[i][j][k] = Ca*Ex[i][j][k] + Cb*((Hz[i][j][k] - Hy[i][j-1][k]) + (Hy[i][j][k-1] - Hy[i][j][k]));
+      }
+    }
+    for (j=0; j<JMAX; j++) {
+      for (i=0; i<IMAX; i++) {
+	Ey[i][j][k] = Ca*Ey[i][j][k] + Cb*((Hz[i-1][j][k] - Hy[i][j][k]) + (Hy[i][j][k] - Hy[i][j][k-1]));
+      }
+    }
+  }
+  if (k < KMAX) {
+    for (j=0; j<JMAX; j++) {
+      for (i=0; i<IMAX; i++) {
+	Ez[i][j][k] = Ca*Ez[i][j][k] + Cb*((Hz[i][j][k] - Hy[i-1][j][k]) + (Hy[i][j-1][k] - Hy[i][j][k]));
+      }
+    }
+  }
+
+  __syncThreads();
+
+  if (k==0)
+    Ez[imax/2][jmax/2][kmax/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
+}
+
+/**
  *  Second half of the total loop circuit.
  */
 extern __global__ void loop2_GPU(double *Ez, double *Hx, double *Hy, double *Hz, double Da, double Db) {
@@ -98,33 +131,12 @@ int main() {
     CHECK_ERROR(cudaMemcpy(g_Hy, Hy, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
     CHECK_ERROR(cudaMemcpy(g_Hz, Hz, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
 
-    for (n = 0; n < nmax; n++) {
-        //for (k = 1; k < kmax; k++) {
-        //    for (j = 1; j < jmax; j++) {
-        //        for (i = 0; i < imax; i++) {
-        //            Ex[i][j][k] = Ca*Ex[i][j][k] + Cb*((Hz[i][j][k] - Hy[i][j-1][k]) + (Hy[i][j][k-1] - Hy[i][j][k]));
-        //        }
-        //    }
-        //}
-        //for (k = 1; k < kmax; k++) {
-        //    for (j = 0; j < jmax; j++) {
-        //        for (i = 1; i < imax; i++) {
-        //            Ey[i][j][k] = Ca*Ey[i][j][k] + Cb*((Hz[i-1][j][k] - Hy[i][j][k]) + (Hy[i][j][k] - Hy[i][j][k-1]));
-        //        }
-        //    }
-        //}
-        //for (k = 0; k < kmax; k++) {
-        //    for (j = 1; j < jmax; j++) {
-        //        for (i = 1; i < imax; i++) {
-        //            Ez[i][j][k] = Ca*Ez[i][j][k] + Cb*((Hz[i][j][k] - Hy[i-1][j][k]) + (Hy[i][j-1][k] - Hy[i][j][k]));
-        //        }
-        //    }
-        //}
-        //Ez[imax/2][jmax/2][kmax/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
+    dim3 threadsPerBlock(32);
+    dim3 numBlocks((kmax + threadsPerBlock.x-1) / threadsPerBlock.x);
 
-        dim3 threadsPerBlock(32);
-        dim3 numBlocks((kmax + threadsPerBlock.x-1) / threadsPerBlock.x);
-        loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
+    for (n = 0; n < nmax; n++) {
+      loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca, n, no);
+      loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
     }
 
     CHECK_ERROR(cudaMemcpy(Ex, g_Ex, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
