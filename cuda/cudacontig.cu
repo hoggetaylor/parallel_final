@@ -23,7 +23,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line) {
 /**
  *  First half of the total loop circuit
  */
-extern __global__ void loop1_GPU(double *Ex, double *Ey, double *Ez, double *Hy, double *Hz, double Cb, double Ca, int n, int no) {
+extern __global__ void loop1_GPU(double (*Ex)[IMAX][JMAX], double *Ey, double *Ez, double *Hy, double *Hz, double Cb, double Ca, int n, int no) {
   int i, j;
   int k = blockIdx.x * 32 + threadIdx.x;
   
