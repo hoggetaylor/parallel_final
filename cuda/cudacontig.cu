@@ -106,12 +106,12 @@ int main() {
     double* g_Hx;
     double* g_Hy;
     double* g_Hz;
-    CHECK_ERROR(cudaMalloc((void**)&g_Ex, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
-    CHECK_ERROR(cudaMalloc((void**)&g_Ey, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
-    CHECK_ERROR(cudaMalloc((void**)&g_Ez, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
-    CHECK_ERROR(cudaMalloc((void**)&g_Hx, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
-    CHECK_ERROR(cudaMalloc((void**)&g_Hy, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
-    CHECK_ERROR(cudaMalloc((void**)&g_Hz, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double)));
+    CHECK_ERROR(cudaMalloc((void**)&g_Ex, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double)));
+    CHECK_ERROR(cudaMalloc((void**)&g_Ey, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double)));
+    CHECK_ERROR(cudaMalloc((void**)&g_Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double)));
+    CHECK_ERROR(cudaMalloc((void**)&g_Hx, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double)));
+    CHECK_ERROR(cudaMalloc((void**)&g_Hy, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double)));
+    CHECK_ERROR(cudaMalloc((void**)&g_Hz, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double)));
 
     double Ca,Cb,Da,Db;
 
@@ -124,12 +124,12 @@ int main() {
     CHECK_ERROR(cudaEventCreate(&stop_event));
     CHECK_ERROR(cudaEventRecord(start_event, 0));
 
-    CHECK_ERROR(cudaMemcpy(g_Ex, Ex, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
-    CHECK_ERROR(cudaMemcpy(g_Ey, Ey, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
-    CHECK_ERROR(cudaMemcpy(g_Ez, Ez, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
-    CHECK_ERROR(cudaMemcpy(g_Hx, Hx, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
-    CHECK_ERROR(cudaMemcpy(g_Hy, Hy, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
-    CHECK_ERROR(cudaMemcpy(g_Hz, Hz, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Ex, Ex, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Ey, Ey, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Ez, Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Hx, Hx, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Hy, Hy, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_ERROR(cudaMemcpy(g_Hz, Hz, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
 
     dim3 threadsPerBlock(32);
     dim3 numBlocks((kmax + threadsPerBlock.x-1) / threadsPerBlock.x);
@@ -139,17 +139,19 @@ int main() {
       loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
     }
 
-    CHECK_ERROR(cudaMemcpy(Ex, g_Ex, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
-    CHECK_ERROR(cudaMemcpy(Ey, g_Ey, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
-    CHECK_ERROR(cudaMemcpy(Ez, g_Ez, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
-    CHECK_ERROR(cudaMemcpy(Hx, g_Hx, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
-    CHECK_ERROR(cudaMemcpy(Hy, g_Hy, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
-    CHECK_ERROR(cudaMemcpy(Hz, g_Hz, (imax+1) * (jmax+1) * (kmax+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Ex, g_Ex, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Ey, g_Ey, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Ez, g_Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Hx, g_Hx, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Hy, g_Hy, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_ERROR(cudaMemcpy(Hz, g_Hz, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
 
+    CHECK_ERROR(cudaFree(g_Ex));
+    CHECK_ERROR(cudaFree(g_Ey));
+    CHECK_ERROR(cudaFree(g_Ez));
     CHECK_ERROR(cudaFree(g_Hx));
     CHECK_ERROR(cudaFree(g_Hy));
     CHECK_ERROR(cudaFree(g_Hz));
-    CHECK_ERROR(cudaFree(g_Ez));
 
     cudaEventRecord(stop_event, 0);
     cudaEventSynchronize(stop_event);
