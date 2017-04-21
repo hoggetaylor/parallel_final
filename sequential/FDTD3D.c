@@ -123,27 +123,18 @@ int main() {
     }
 
     FILE * fPointer;
-    fPointer = fopen("outseq.dat","w");
-
-    for (k=0; k<kmax; k++) {
-      for (j=0; j<jmax-1; j++) {
-	for (i=0; i<imax-1; i++) {
-
+    fPointer = fopen("sequentialoutput.dat","w");
+    int x, y, z;
+    for (x=0; x<kmax; x++) {
+      for (y=1; y<jmax; y++) {
+        for (z=1; z<imax; z++) {
           memset(buf, 0, 18);
-          sprintf(buf, "%e\n", Hx[i][j][k]);
+          sprintf(buf, "%e\n", Ez[z][y][x]);
           fputs(buf, fPointer);
-
-          memset(buf, 0, 18);
-          sprintf(buf, "%e\n", Hy[i][j][k]);
-          fputs(buf, fPointer);
-
-          memset(buf, 0, 18);
-          sprintf(buf, "%e\n", Hz[i][j][k]);
-          fputs(buf, fPointer);
-    
-	}
+        }
       }
     }
+
 
     fclose(fPointer);
 

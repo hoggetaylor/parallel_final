@@ -15,6 +15,9 @@ batchseq : slsequential.slurm
 editseq : sequential/FDTD3D.c
 	vim sequential/FDTD3D.c
 
+catseq :
+	echo "errors:";cat sequential/err.txt;echo "results";cat sequential/results.txt;
+
 # REVERSED ITERATION
 
 buildrev : reverse/reviter.cu
@@ -29,6 +32,9 @@ batchrev : slreverse.slurm
 editrev : reverse/reviter.cu
 	vim reverse/reviter.cu
 
+catrev :
+	echo "errors:";cat reverse/err.txt;echo "results:";cat reverse/results.txt;
+
 # CUDA IMPROVEMENTS ONLY
 
 buildcuda : cuda/cudatiming.cu
@@ -42,6 +48,9 @@ batchcuda : slcuda.slurm
 
 editcuda : cuda/cudatiming.cu
 	vim cuda/cudacontig.cu
+
+catcuda :
+	echo "errors:";cat cuda/err.txt;echo "results:";cat cuda/results.txt;
 
 # OTHER HELPERS
 

@@ -1,7 +1,7 @@
 from itertools import izip
 
 line = 0
-for sln, pln in izip(open('outseq.dat', 'r'), open('outpar.dat', 'r')):
+for sln, pln in izip(open('sequentialoutput.dat', 'r'), open('parlleloutput.dat', 'r')):
         if (sln is '\n' or pln is '\n'):
 		continue
 	line += 1

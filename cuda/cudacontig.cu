@@ -159,5 +159,20 @@ int main() {
 
     printf("GPU Time: %.2f\n", elapsed_time);
 
+    FILE * fPointer;
+    fPointer = fopen("parlleloutput.dat", "w");
+    char buf[18];
+    int x, y, z;
+    for (x=0; x<KMAX; x++) {
+      for (y=1; y<JMAX; y++) {
+	for (z=1; z<IMAX; z++) {
+	  memset(buf, 0, 18);
+	  sprintf(buf, "%e\n", Ez[(z*IMAX) + (y*JMAX) + x]);
+	  fputs(buf, fPointer);
+	}
+      }
+    }
+    fclose(fPointer);
+
     return 0;
 }
