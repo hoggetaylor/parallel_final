@@ -34,14 +34,14 @@ extern __global__ void loop1_GPU(double (*Ex)[IMAX][JMAX], double (*Ey)[IMAX][JM
       }
     }
     for (j=0; j<JMAX; j++) {
-      for (i=0; i<IMAX; i++) {
+      for (i=1; i<IMAX; i++) {
 	Ey[i][j][k] = Ca*Ey[i][j][k] + Cb*((Hz[i-1][j][k] - Hy[i][j][k]) + (Hy[i][j][k] - Hy[i][j][k-1]));
       }
     }
   }
   if (k < KMAX) {
-    for (j=0; j<JMAX; j++) {
-      for (i=0; i<IMAX; i++) {
+    for (j=1; j<JMAX; j++) {
+      for (i=1; i<IMAX; i++) {
 	Ez[i][j][k] = Ca*Ez[i][j][k] + Cb*((Hz[i][j][k] - Hy[i-1][j][k]) + (Hy[i][j-1][k] - Hy[i][j][k]));
       }
     }
@@ -59,7 +59,7 @@ extern __global__ void loop2_GPU(double (*Ez)[IMAX][JMAX], double (*Hx)[IMAX][JM
     int i, j;
     int k = blockIdx.x * 32 + threadIdx.x;
 
-    if (k < KMAX && k > 0) {
+    if (k < KMAX) {
         for (j = 0; j < JMAX-1; j++) {
             for (i = 1; i < IMAX-1; i++) {
                 Hx[i][j][k] = Da*Hx[i][j][k] + Db*((Ez[i][j][k] - Ez[i][j+1][k]) + (Ez[i][j][k+1]-Ez[i][j][k]));
@@ -71,7 +71,7 @@ extern __global__ void loop2_GPU(double (*Ez)[IMAX][JMAX], double (*Hx)[IMAX][JM
            }
        }
     }
-    if (k < KMAX) {
+    if (k < KMAX && k > 0) {
        for (j = 0; j < JMAX-1; j++) {
            for (i = 0; i < IMAX-1; i++) {
                Hz[i][j][k] = Da*Hz[i][j][k] + Db*((Ez[i][j][k] - Ez[i+1][j][k]) + (Ez[i][j+1][k]-Ez[i][j][k]));
@@ -131,13 +131,13 @@ int main() {
     CHECK_ERROR(cudaMemcpy(g_Hz, Hz, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
 
     dim3 threadsPerBlock(32);
-    dim3 numBlocks((KMAX + threadsPerBlock.x-1) / threadsPerBlock.x);
+    dim3 numBlocks((KMAX + 31) / 32);
 
     dim3 singleThread(1);
-    dim3 singleBock(1);
+    dim3 singleBlock(1);
 
     for (n = 0; n < nmax; n++) {
-      loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca, n, no, nhalf);
+      loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca);
       mid_GPU<<<singleBlock, singleThread>>>(g_Ez, n, no, nhalf);
       loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
     }
