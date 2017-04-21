@@ -100,12 +100,12 @@ int main() {
     Hy = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
     Hz = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
 
-    double* g_Ex;
-    double* g_Ey;
-    double* g_Ez;
-    double* g_Hx;
-    double* g_Hy;
-    double* g_Hz;
+    double (*g_Ex)[IMAX][JMAX];
+    double (*g_Ey)[IMAX][JMAX];
+    double (*g_Ez)[IMAX][JMAX];
+    double (*g_Hx)[IMAX][JMAX];
+    double (*g_Hy)[IMAX][JMAX];
+    double (*g_Hz)[IMAX][JMAX];
     CHECK_ERROR(cudaMalloc((void**)&g_Ex, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double)));
     CHECK_ERROR(cudaMalloc((void**)&g_Ey, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double)));
     CHECK_ERROR(cudaMalloc((void**)&g_Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double)));
