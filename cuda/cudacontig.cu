@@ -137,11 +137,11 @@ int main() {
     dim3 singleBlock(1);
 
     for (n = 0; n < nmax; n++) {
-      loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca);
+      loop1_GPU<<<threadsPerBlock, numBlocks>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca);
       CHECK_ERROR(cudaPeekAtLastError());
       mid_GPU<<<singleBlock, singleThread>>>(g_Ez, n, no, nhalf);
       CHECK_ERROR(cudaPeekAtLastError());
-      loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
+      loop2_GPU<<<threadsPerBlock, numBlocks>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
       CHECK_ERROR(cudaPeekAtLastError());
     }
 
