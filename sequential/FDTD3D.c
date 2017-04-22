@@ -72,19 +72,21 @@ int main() {
     }
 
     for (n = 0; n < nmax; n++) {
-        for (k = 0; k < kmax; k++) {
-            if (k > 0) {
-                for (j = 1; j < jmax; j++) {
-                    for (i = 0; i < imax; i++) {
-                        Ex[i][j][k] = Ca*Ex[i][j][k] + Cb*((Hz[i][j][k] - Hy[i][j-1][k]) + (Hy[i][j][k-1] - Hy[i][j][k]));
-                    }
-                }
-                for (j = 0; j < jmax; j++) {
-                    for (i = 1; i < imax; i++) {
-                        Ey[i][j][k] = Ca*Ey[i][j][k] + Cb*((Hz[i-1][j][k] - Hy[i][j][k]) + (Hy[i][j][k] - Hy[i][j][k-1]));
-                    }
+        for (k = 1; k < kmax; k++) {
+            for (j = 1; j < jmax; j++) {
+                for (i = 0; i < imax; i++) {
+                    Ex[i][j][k] = Ca*Ex[i][j][k] + Cb*((Hz[i][j][k] - Hy[i][j-1][k]) + (Hy[i][j][k-1] - Hy[i][j][k]));
                 }
             }
+        }
+        for (k = 1; k < kmax; k++) {
+            for (j = 0; j < jmax; j++) {
+                for (i = 1; i < imax; i++) {
+                    Ey[i][j][k] = Ca*Ey[i][j][k] + Cb*((Hz[i-1][j][k] - Hy[i][j][k]) + (Hy[i][j][k] - Hy[i][j][k-1]));
+                }
+            }
+        }
+        for (k = 0; k < kmax; k++) {
             for (j = 1; j < jmax; j++) {
                 for (i = 1; i < imax; i++) {
                     Ez[i][j][k] = Ca*Ez[i][j][k] + Cb*((Hz[i][j][k] - Hy[i-1][j][k]) + (Hy[i][j-1][k] - Hy[i][j][k]));
@@ -98,18 +100,20 @@ int main() {
                    Hx[i][j][k] = Da*Hx[i][j][k] + Db*((Ez[i][j][k] - Ez[i][j+1][k]) + (Ez[i][j][k+1]-Ez[i][j][k]));
                }
            }
+        }
+        for (k = 0; k < kmax; k++) {
            for (j = 1; j < jmax-1; j++) {
                for (i = 0; i < imax-1; i++) {
                    Hy[i][j][k] = Da*Hy[i][j][k] + Db*((Ez[i+1][j][k] - Ez[i][j][k]) + (Ez[i][j][k]-Ez[i][j][k+1]));
                }
            }
-            if (k > 0) {
-               for (j = 0; j < jmax-1; j++) {
-                   for (i = 0; i < imax-1; i++) {
-                       Hz[i][j][k] = Da*Hz[i][j][k] + Db*((Ez[i][j][k] - Ez[i+1][j][k]) + (Ez[i][j+1][k]-Ez[i][j][k]));
-                   }
+        }
+        for (k = 1; k < kmax; k++) {
+           for (j = 0; j < jmax-1; j++) {
+               for (i = 0; i < imax-1; i++) {
+                   Hz[i][j][k] = Da*Hz[i][j][k] + Db*((Ez[i][j][k] - Ez[i+1][j][k]) + (Ez[i][j+1][k]-Ez[i][j][k]));
                }
-            }
+           }
         }
     }
 

@@ -88,17 +88,17 @@ int main() {
     double delta = 1e-3;
     double dt = delta/(c*1.41421356237);
 
-    double (*Ex)[IMAX][JMAX], (*Ey)[IMAX][JMAX], (*Ez)[IMAX][JMAX], (*Hy)[IMAX][JMAX], (*Hx)[IMAX][JMAX], (*Hz)[IMAX][JMAX];
+    double *Ex, *Ey, *Ez, *Hy, *Hx, *Hz;
 
     cudaEvent_t start_event, stop_event;
     float elapsed_time;
 
-    Ex = (double (*)[IMAX][JMAX])calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
-    Ey = (double (*)[IMAX][JMAX])calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
-    Ez = (double (*)[IMAX][JMAX])calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
-    Hx = (double (*)[IMAX][JMAX])calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
-    Hy = (double (*)[IMAX][JMAX])calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
-    Hz = (double (*)[IMAX][JMAX])calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Ex = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Ey = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Ez = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Hx = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Hy = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
+    Hz = (double *)calloc((IMAX+1) * (JMAX+1) * (KMAX+1), sizeof(double));
 
     double (*g_Ex)[IMAX][JMAX];
     double (*g_Ey)[IMAX][JMAX];
