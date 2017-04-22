@@ -38,7 +38,7 @@ catrev :
 # CUDA IMPROVEMENTS ONLY
 
 buildcuda : cuda/cudatiming.cu
-	cd cuda; nvcc $(INCLUDE) -o cudacontig cudacontig.cu -g
+	cd cuda; nvcc $(INCLUDE) -o cudacontig cudacontig.cu -g -arch=sm_60
 
 runcuda : buildcuda
 	./cuda/cudacontig

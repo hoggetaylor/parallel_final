@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <sys/time.h>
 #include <cuda_runtime.h>
 
@@ -23,7 +22,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line) {
 /**
  *  First half of the total loop circuit
  */
-extern __global__ void loop1_GPU(double (*Ex)[IMAX][JMAX], double (*Ey)[IMAX][JMAX], double (*Ez)[IMAX][JMAX], double (*Hy)[IMAX][JMAX], double (*Hz)[IMAX][JMAX], double Cb, double Ca) {
+extern __global__ void loop1_GPU(double (*Ex)[IMAX][JMAX], double (*Ey)[IMAX][JMAX], double (*Ez)[IMAX][JMAX], double (*Hy)[IMAX][JMAX], double (*Hz)[IMAX][JMAX], double Cb, double Ca, int n, int no, int nhalf) {
   int i, j;
   int k = blockIdx.x * 32 + threadIdx.x;
   
@@ -38,20 +37,19 @@ extern __global__ void loop1_GPU(double (*Ex)[IMAX][JMAX], double (*Ey)[IMAX][JM
 	Ey[i][j][k] = Ca*Ey[i][j][k] + Cb*((Hz[i-1][j][k] - Hy[i][j][k]) + (Hy[i][j][k] - Hy[i][j][k-1]));
       }
     }
-  }
+  } // end if k
   if (k < KMAX) {
     for (j=1; j<JMAX; j++) {
       for (i=1; i<IMAX; i++) {
 	Ez[i][j][k] = Ca*Ez[i][j][k] + Cb*((Hz[i][j][k] - Hy[i-1][j][k]) + (Hy[i][j-1][k] - Hy[i][j][k]));
       }
     }
+  } // end if k
+  if (k==(KMAX/2)) {
+    Ez[IMAX/2][JMAX/2][k] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
   }
 }
 
-extern __global__ void mid_GPU(double (*Ez)[IMAX][JMAX], double n, double no, double nhalf) {
-    if ((blockIdx.x+threadIdx.x) == 0)
-      Ez[IMAX/2][JMAX/2][KMAX/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
-}
 
 /**
  *  Second half of the total loop circuit.
@@ -71,22 +69,24 @@ extern __global__ void loop2_GPU(double (*Ez)[IMAX][JMAX], double (*Hx)[IMAX][JM
                Hy[i][j][k] = Da*Hy[i][j][k] + Db*((Ez[i+1][j][k] - Ez[i][j][k]) + (Ez[i][j][k]-Ez[i][j][k+1]));
            }
        }
-    }
+    } // end if k
     if (k < KMAX && k > 0) {
        for (j = 0; j < JMAX-1; j++) {
            for (i = 0; i < IMAX-1; i++) {
                Hz[i][j][k] = Da*Hz[i][j][k] + Db*((Ez[i][j][k] - Ez[i+1][j][k]) + (Ez[i][j+1][k]-Ez[i][j][k]));
            }
        }
-    }
+    } // end if k
 }
 
 int main() {
-    int nmax = 1000, nhalf = 20, no = nhalf*3;
+    int nmax = 600, nhalf = 20, no = nhalf*3;
     int n;
     double c = 2.99792458e8, pi = 3.141592654, sigma = 0, mu = 4.0 * pi * 1.0e-7, eps = 8.85418782e-12;
     double delta = 1e-3;
     double dt = delta/(c*1.41421356237);
+
+    int counter = 0;
 
     double *Ex, *Ey, *Ez, *Hy, *Hx, *Hz;
 
@@ -138,10 +138,13 @@ int main() {
     dim3 singleBlock(1);
 
     for (n = 0; n < nmax; n++) {
-      loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca);
+      loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca, n, no, nhalf);
       CHECK_ERROR(cudaPeekAtLastError());
-      mid_GPU<<<singleThread, singleBlock>>>(g_Ez, n, no, nhalf);
+      CHECK_ERROR(cudaMemcpy(Ez, g_Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
       CHECK_ERROR(cudaPeekAtLastError());
+      //Ez[((IMAX/2)*JMAX*KMAX)+((JMAX/2)*KMAX)+(KMAX/2)] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
+      printf("%d EZ: %.12f\t%.12f\n", counter++, /*Ez[(JMAX*KMAX)+(KMAX)], Ez[(JMAX*KMAX)+(KMAX)+1]); */ Ez[((IMAX/2)*JMAX*KMAX)+((JMAX/2)*KMAX)+(KMAX/2)], 0.0);
+      //CHECK_ERROR(cudaMemcpy(g_Ez, Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
       loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
       CHECK_ERROR(cudaPeekAtLastError());
     }
@@ -174,7 +177,7 @@ int main() {
       for (y=1; y<JMAX; y++) {
 	for (z=1; z<IMAX; z++) {
 	  memset(buf, 0, 18);
-	  sprintf(buf, "%e\n", Ez[(z*IMAX) + (y*JMAX) + x]);
+	  sprintf(buf, "%e\n", Ez[(z*JMAX*KMAX) + (y*KMAX) + x]);
 	  fputs(buf, fPointer);
 	}
       }

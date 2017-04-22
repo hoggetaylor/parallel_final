@@ -7,11 +7,12 @@
 #include <sys/time.h>
 
 int main() {
-    int imax = 100, jmax = 100, nmax = 1000, nhalf = 20, no = nhalf*3, kmax = 100;
+    int imax = 100, jmax = 100, nmax = 600, nhalf = 20, no = nhalf*3, kmax = 100;
     int i, j, n,k;
     double c = 2.99792458e8, pi = 3.141592654, sigma = 0, mu = 4.0 * pi * 1.0e-7, eps = 8.85418782e-12;
     double delta = 1e-3;
     double dt = delta/(c*1.41421356237);
+    int counter = 0;
 
     double ***Ex, ***Ey, ***Ez, ***Hy, ***Hx, ***Hz;
 
@@ -94,6 +95,7 @@ int main() {
             }
         }
         Ez[imax/2][jmax/2][kmax/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
+        printf("%d EZ %.12f\t%.12f\n", counter++, /*Ez[1][1][0], Ez[1][1][1]); */Ez[imax/2][jmax/2][kmax/2], 0.0);
         for (k = 0; k < kmax; k++) {
            for (j = 0; j < jmax-1; j++) {
                for (i = 1; i < imax-1; i++) {
