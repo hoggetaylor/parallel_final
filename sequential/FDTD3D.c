@@ -7,7 +7,7 @@
 #include <sys/time.h>
 
 int main() {
-    int imax = 100, jmax = 100, nmax = 600, nhalf = 20, no = nhalf*3, kmax = 100;
+    int imax = 100, jmax = 100, nmax = 3, nhalf = 20, no = nhalf*3, kmax = 100;
     int i, j, n,k;
     double c = 2.99792458e8, pi = 3.141592654, sigma = 0, mu = 4.0 * pi * 1.0e-7, eps = 8.85418782e-12;
     double delta = 1e-3;
@@ -127,11 +127,11 @@ int main() {
     FILE * fPointer;
     fPointer = fopen("sequentialoutput.dat","w");
     int x, y, z;
-    for (x=0; x<kmax; x++) {
+    for (x=1; x<imax; x++) {
       for (y=1; y<jmax; y++) {
-        for (z=1; z<imax; z++) {
+        for (z=0; z<kmax; z++) {
           memset(buf, 0, 18);
-          sprintf(buf, "%e\n", Ez[z][y][x]);
+          sprintf(buf, "%e\n", Ez[x][y][z]);
           fputs(buf, fPointer);
         }
       }

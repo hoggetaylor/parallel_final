@@ -80,7 +80,7 @@ extern __global__ void loop2_GPU(double (*Ez)[IMAX][JMAX], double (*Hx)[IMAX][JM
 }
 
 int main() {
-    int nmax = 600, nhalf = 20, no = nhalf*3;
+    int nmax = 3, nhalf = 20, no = nhalf*3;
     int n;
     double c = 2.99792458e8, pi = 3.141592654, sigma = 0, mu = 4.0 * pi * 1.0e-7, eps = 8.85418782e-12;
     double delta = 1e-3;
@@ -138,13 +138,14 @@ int main() {
     dim3 singleBlock(1);
 
     for (n = 0; n < nmax; n++) {
+      // loop 1
       loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca, n, no, nhalf);
       CHECK_ERROR(cudaPeekAtLastError());
+      // error checking
       CHECK_ERROR(cudaMemcpy(Ez, g_Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
       CHECK_ERROR(cudaPeekAtLastError());
-      //Ez[((IMAX/2)*JMAX*KMAX)+((JMAX/2)*KMAX)+(KMAX/2)] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
       printf("%d EZ: %.12f\t%.12f\n", counter++, /*Ez[(JMAX*KMAX)+(KMAX)], Ez[(JMAX*KMAX)+(KMAX)+1]); */ Ez[((IMAX/2)*JMAX*KMAX)+((JMAX/2)*KMAX)+(KMAX/2)], 0.0);
-      //CHECK_ERROR(cudaMemcpy(g_Ez, Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyHostToDevice));
+      // loop 2
       loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
       CHECK_ERROR(cudaPeekAtLastError());
     }
@@ -173,11 +174,11 @@ int main() {
     fPointer = fopen("parlleloutput.dat", "w");
     char buf[18];
     int x, y, z;
-    for (x=0; x<KMAX; x++) {
+    for (x=1; x<IMAX; x++) {
       for (y=1; y<JMAX; y++) {
-	for (z=1; z<IMAX; z++) {
+	for (z=0; z<KMAX; z++) {
 	  memset(buf, 0, 18);
-	  sprintf(buf, "%e\n", Ez[(z*JMAX*KMAX) + (y*KMAX) + x]);
+	  sprintf(buf, "%e\n", Ez[(x*JMAX*KMAX) + (y*KMAX) + z]);
 	  fputs(buf, fPointer);
 	}
       }
