@@ -50,7 +50,6 @@ extern __global__ void loop1_GPU(double (*Ex)[IMAX][JMAX], double (*Ey)[IMAX][JM
   }
 }
 
-
 /**
  *  Second half of the total loop circuit.
  */
@@ -80,7 +79,7 @@ extern __global__ void loop2_GPU(double (*Ez)[IMAX][JMAX], double (*Hx)[IMAX][JM
 }
 
 int main() {
-    int nmax = 3, nhalf = 20, no = nhalf*3;
+    int nmax = 400, nhalf = 20, no = nhalf*3;
     int n;
     double c = 2.99792458e8, pi = 3.141592654, sigma = 0, mu = 4.0 * pi * 1.0e-7, eps = 8.85418782e-12;
     double delta = 1e-3;
@@ -142,9 +141,9 @@ int main() {
       loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca, n, no, nhalf);
       CHECK_ERROR(cudaPeekAtLastError());
       // error checking
-      CHECK_ERROR(cudaMemcpy(Ez, g_Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
-      CHECK_ERROR(cudaPeekAtLastError());
-      printf("%d EZ: %.12f\t%.12f\n", counter++, /*Ez[(JMAX*KMAX)+(KMAX)], Ez[(JMAX*KMAX)+(KMAX)+1]); */ Ez[((IMAX/2)*JMAX*KMAX)+((JMAX/2)*KMAX)+(KMAX/2)], 0.0);
+      //CHECK_ERROR(cudaMemcpy(Ez, g_Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
+      //CHECK_ERROR(cudaPeekAtLastError());
+      //printf("%d EZ: %.12f\t%.12f\n", counter++, /*Ez[(JMAX*KMAX)+(KMAX)], Ez[(JMAX*KMAX)+(KMAX)+1]); */ Ez[((IMAX/2)*JMAX*KMAX)+((JMAX/2)*KMAX)+(KMAX/2)], 0.0);
       // loop 2
       loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
       CHECK_ERROR(cudaPeekAtLastError());
@@ -169,7 +168,7 @@ int main() {
     cudaEventElapsedTime(&elapsed_time, start_event, stop_event);
 
     printf("GPU Time: %.2f\n", elapsed_time);
-
+/*
     FILE * fPointer;
     fPointer = fopen("parlleloutput.dat", "w");
     char buf[18];
@@ -178,12 +177,30 @@ int main() {
       for (y=1; y<JMAX; y++) {
 	for (z=0; z<KMAX; z++) {
 	  memset(buf, 0, 18);
+	  sprintf(buf, "%e\n", Ex[(x*JMAX*KMAX) + (y*KMAX) + z]);
+	  fputs(buf, fPointer);
+	  memset(buf, 0, 18);
+	  sprintf(buf, "%e\n", Ey[(x*JMAX*KMAX) + (y*KMAX) + z]);
+	  fputs(buf, fPointer);
+	  memset(buf, 0, 18);
 	  sprintf(buf, "%e\n", Ez[(x*JMAX*KMAX) + (y*KMAX) + z]);
+	  fputs(buf, fPointer);
+	  memset(buf, 0, 18);
+	  sprintf(buf, "%e\n", Hx[(x*JMAX*KMAX) + (y*KMAX) + z]);
+	  fputs(buf, fPointer);
+	  memset(buf, 0, 18);
+	  sprintf(buf, "%e\n", Hy[(x*JMAX*KMAX) + (y*KMAX) + z]);
+	  fputs(buf, fPointer);
+	  memset(buf, 0, 18);
+	  sprintf(buf, "%e\n", Hz[(x*JMAX*KMAX) + (y*KMAX) + z]);
+	  fputs(buf, fPointer);
+          memset(buf, 0, 18);
+	  sprintf(buf, "                 \n");
 	  fputs(buf, fPointer);
 	}
       }
     }
     fclose(fPointer);
-
+*/
     return 0;
 }

@@ -2,9 +2,9 @@ from itertools import izip
 
 line = 0
 for sln, pln in izip(open('sequentialoutput.dat', 'r'), open('parlleloutput.dat', 'r')):
-        if (sln is '\n' or pln is '\n'):
-		continue
 	line += 1
+        if (sln is '\n' or pln is '\n' or sln.strip() is '' or pln.strip() is ''):
+		continue
 
 	snm = float(sln[:4])
 	pnm = float(pln[:4])
@@ -15,8 +15,8 @@ for sln, pln in izip(open('sequentialoutput.dat', 'r'), open('parlleloutput.dat'
 	pnm = pnm * (10**pexp)
 
 	if (abs(snm-pnm) > 10000):
-		print ('INVALID FOUND ON LINE: %s\n%s%s%f' % (line,sln,pln,abs(snm-pnm)))
-		break
+		print ('INVALID FOUND ON LINE: %s\ns: %sp: %s' % (line,sln,pln))
+		#break
 
 
 

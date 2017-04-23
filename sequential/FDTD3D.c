@@ -6,8 +6,8 @@
 #include <math.h>
 #include <sys/time.h>
 
-int main() {
-    int imax = 100, jmax = 100, nmax = 3, nhalf = 20, no = nhalf*3, kmax = 100;
+int main() { 
+    int imax = 100, jmax = 100, kmax = 100, nmax = 400, nhalf = 20, no = (nhalf*3);
     int i, j, n,k;
     double c = 2.99792458e8, pi = 3.141592654, sigma = 0, mu = 4.0 * pi * 1.0e-7, eps = 8.85418782e-12;
     double delta = 1e-3;
@@ -95,7 +95,7 @@ int main() {
             }
         }
         Ez[imax/2][jmax/2][kmax/2] = exp(-(pow(((n-no)/(double)nhalf),2.0)));
-        printf("%d EZ %.12f\t%.12f\n", counter++, /*Ez[1][1][0], Ez[1][1][1]); */Ez[imax/2][jmax/2][kmax/2], 0.0);
+        //printf("%d EZ %.12f\t%.12f\n", counter++, /*Ez[1][1][0], Ez[1][1][1]); */Ez[imax/2][jmax/2][kmax/2], 0.0);
         for (k = 0; k < kmax; k++) {
            for (j = 0; j < jmax-1; j++) {
                for (i = 1; i < imax-1; i++) {
@@ -123,7 +123,7 @@ int main() {
         printf("Error in gettimeofday()\n");
         exit(1);
     }
-
+/*
     FILE * fPointer;
     fPointer = fopen("sequentialoutput.dat","w");
     int x, y, z;
@@ -131,15 +131,31 @@ int main() {
       for (y=1; y<jmax; y++) {
         for (z=0; z<kmax; z++) {
           memset(buf, 0, 18);
+          sprintf(buf, "%e\n", Ex[x][y][z]);
+          fputs(buf, fPointer);
+          memset(buf, 0, 18);
+          sprintf(buf, "%e\n", Ey[x][y][z]);
+          fputs(buf, fPointer);
+          memset(buf, 0, 18);
           sprintf(buf, "%e\n", Ez[x][y][z]);
+          fputs(buf, fPointer);
+          memset(buf, 0, 18);
+          sprintf(buf, "%e\n", Hx[x][y][z]);
+          fputs(buf, fPointer);
+          memset(buf, 0, 18);
+          sprintf(buf, "%e\n", Hy[x][y][z]);
+          fputs(buf, fPointer);
+          memset(buf, 0, 18);
+          sprintf(buf, "%e\n", Hz[x][y][z]);
+          fputs(buf, fPointer);
+          memset(buf, 0, 18);
+          sprintf(buf, "                 \n");
           fputs(buf, fPointer);
         }
       }
     }
-
-
     fclose(fPointer);
-
+*/
     // calculate run time
     if(tstart.tv_usec > tend.tv_usec){
         tend.tv_usec += 1000000;
