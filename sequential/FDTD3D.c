@@ -123,7 +123,7 @@ int main() {
         printf("Error in gettimeofday()\n");
         exit(1);
     }
-/*
+
     FILE * fPointer;
     fPointer = fopen("sequentialoutput.dat","w");
     int x, y, z;
@@ -155,7 +155,7 @@ int main() {
       }
     }
     fclose(fPointer);
-*/
+
     // calculate run time
     if(tstart.tv_usec > tend.tv_usec){
         tend.tv_usec += 1000000;

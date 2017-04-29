@@ -140,13 +140,15 @@ int main() {
       // loop 1
       loop1_GPU<<<numBlocks, threadsPerBlock>>>(g_Ex, g_Ey, g_Ez, g_Hy, g_Hz, Cb, Ca, n, no, nhalf);
       CHECK_ERROR(cudaPeekAtLastError());
-      // error checking
+      CHECK_ERROR(cudaDeviceSynchronize());
+      // error checking  
       //CHECK_ERROR(cudaMemcpy(Ez, g_Ez, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
       //CHECK_ERROR(cudaPeekAtLastError());
       //printf("%d EZ: %.12f\t%.12f\n", counter++, /*Ez[(JMAX*KMAX)+(KMAX)], Ez[(JMAX*KMAX)+(KMAX)+1]); */ Ez[((IMAX/2)*JMAX*KMAX)+((JMAX/2)*KMAX)+(KMAX/2)], 0.0);
       // loop 2
       loop2_GPU<<<numBlocks, threadsPerBlock>>>(g_Ez, g_Hx, g_Hy, g_Hz, Da, Db);
       CHECK_ERROR(cudaPeekAtLastError());
+      CHECK_ERROR(cudaDeviceSynchronize());
     }
 
     CHECK_ERROR(cudaMemcpy(Ex, g_Ex, (IMAX+1) * (JMAX+1) * (KMAX+1) * sizeof(double), cudaMemcpyDeviceToHost));
@@ -168,7 +170,7 @@ int main() {
     cudaEventElapsedTime(&elapsed_time, start_event, stop_event);
 
     printf("GPU Time: %.2f\n", elapsed_time);
-/*
+
     FILE * fPointer;
     fPointer = fopen("parlleloutput.dat", "w");
     char buf[18];
@@ -201,6 +203,6 @@ int main() {
       }
     }
     fclose(fPointer);
-*/
+
     return 0;
 }
